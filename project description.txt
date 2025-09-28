@@ -1,0 +1,9 @@
+now I am building a project for final year I will explain you my project wait
+project name:Automated medicine quality monitoring using ML and IOT
+
+project description:
+so this is a system where we will use sensors for taking the real time data like temperature,humidity,illuminance from the truck for example and then thi dat will be sent to the backend in real rime continuously in the form of json format .this data is accepted by our backend and then this  data is continuously sent to ml model which will have specified parameters check and then it will send is as safe or unsafe to the backend and then backend will send the message to the frontend.
+so this is the overall working and most important thing is the alreat should in be real time and live and the frontend need not required to refresh manually everytime it should be automatic.
+
+technologies to be used:
+temperature ,humidity and illuminance sensors and react,mongodb,ml algorithms classifications ANN.
