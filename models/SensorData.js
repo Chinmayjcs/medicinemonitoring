@@ -21,23 +21,6 @@ const sensorDataSchema = new mongoose.Schema({
   },
   
   // Metadata
-  truckId: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  location: {
-    latitude: {
-      type: Number,
-      min: -90,
-      max: 90
-    },
-    longitude: {
-      type: Number,
-      min: -180,
-      max: 180
-    }
-  },
   
   // ML Analysis Results (will be updated after ML processing)
   mlAnalysis: {
@@ -79,7 +62,6 @@ const sensorDataSchema = new mongoose.Schema({
 });
 
 // Indexes for better query performance
-sensorDataSchema.index({ truckId: 1, timestamp: -1 });
 sensorDataSchema.index({ 'mlAnalysis.status': 1 });
 sensorDataSchema.index({ timestamp: -1 });
 
@@ -94,10 +76,6 @@ sensorDataSchema.methods.isRecent = function() {
   return this.timestamp >= fiveMinutesAgo;
 };
 
-// Static method to get latest data for a truck
-sensorDataSchema.statics.getLatestForTruck = function(truckId) {
-  return this.findOne({ truckId }).sort({ timestamp: -1 });
-};
 
 // Static method to get unsafe readings
 sensorDataSchema.statics.getUnsafeReadings = function() {

@@ -55,8 +55,8 @@ A Node.js backend system for automated medicine quality monitoring using IoT sen
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/sensors/data` | Store new sensor data |
-| GET | `/api/sensors/truck/:truckId` | Get latest data for specific truck |
-| GET | `/api/sensors/trucks/status` | Get status of all trucks |
+| GET | `/api/sensors/latest` | Get latest sensor data |
+| GET | `/api/sensors/status` | Get all sensor data |
 | GET | `/api/sensors/alerts` | Get unsafe readings (alerts) |
 | GET | `/api/sensors/health` | Health check endpoint |
 
@@ -67,11 +67,6 @@ A Node.js backend system for automated medicine quality monitoring using IoT sen
   "temperature": 25.5,
   "humidity": 60.2,
   "illuminance": 150.0,
-  "truckId": "TRUCK_001",
-  "location": {
-    "latitude": 12.9716,
-    "longitude": 77.5946
-  },
   "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
@@ -87,12 +82,7 @@ A Node.js backend system for automated medicine quality monitoring using IoT sen
 {
   "temperature": 8.5,
   "humidity": 45.2,
-  "illuminance": 120.0,
-  "truckId": "TRUCK_001",
-  "location": {
-    "latitude": 12.9716,
-    "longitude": 77.5946
-  }
+  "illuminance": 120.0
 }
 ```
 
@@ -187,8 +177,6 @@ The API returns standardized error responses:
 - **Temperature**: -50°C to 100°C
 - **Humidity**: 0% to 100%
 - **Illuminance**: Positive numbers only
-- **Truck ID**: Required, 1-50 characters
-- **Location**: Optional, valid latitude/longitude
 
 ## 🔄 Real-time Updates
 

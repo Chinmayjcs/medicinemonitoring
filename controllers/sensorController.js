@@ -2,6 +2,16 @@ const SensorData = require('../models/SensorData');
 const axios = require('axios');
 
 // Store sensor data and trigger ML analysis
+//
+// =================== PLACEHOLDER FOR ML INTEGRATION ===================
+// Your friend can connect the ML model in the triggerMLAnalysis function below.
+// Pass sensor data to your ML model and update the mlAnalysis field as needed.
+// ======================================================================
+//
+// =================== PLACEHOLDER FOR FRONTEND =========================
+// Frontend can consume the API endpoints in this controller and receive
+// real-time updates via Socket.IO events (see server.js).
+// ======================================================================
 // [Lakshmana's Part - Step 1: Receive and Store Data]
 // This function is the entry point for sensor data. It receives the data,
 // saves it to the database, and then triggers the ML analysis.
@@ -14,7 +24,9 @@ const storeSensorData = async (req, res) => {
 
     // Create new sensor data record
     const sensorData = new SensorData({
-      ...req.body,
+      temperature: req.body.temperature,
+      humidity: req.body.humidity,
+      illuminance: req.body.illuminance,
       timestamp: req.body.timestamp || new Date()
     });
 
@@ -28,7 +40,6 @@ const storeSensorData = async (req, res) => {
     if (req.io) {
       req.io.emit('newSensorData', {
         id: savedData._id,
-        truckId: savedData.truckId,
         temperature: savedData.temperature,
         humidity: savedData.humidity,
         illuminance: savedData.illuminance,
@@ -47,7 +58,6 @@ const storeSensorData = async (req, res) => {
       message: 'Sensor data stored successfully',
       data: {
         id: savedData._id,
-        truckId: savedData.truckId,
         timestamp: savedData.timestamp,
         mlAnalysis: savedData.mlAnalysis
       }
@@ -63,20 +73,18 @@ const storeSensorData = async (req, res) => {
   }
 };
 
-// Get latest sensor data for a specific truck
+// Get latest sensor data
 const getLatestSensorData = async (req, res) => {
   try {
-    const { truckId } = req.params;
     const limit = parseInt(req.query.limit) || 10;
-
-    const sensorData = await SensorData.find({ truckId })
+    const sensorData = await SensorData.find()
       .sort({ timestamp: -1 })
       .limit(limit);
 
     if (!sensorData || sensorData.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'No sensor data found for this truck'
+        message: 'No sensor data found'
       });
     }
 
@@ -96,43 +104,20 @@ const getLatestSensorData = async (req, res) => {
   }
 };
 
-// Get all trucks with their latest status
-const getAllTrucksStatus = async (req, res) => {
+// Get all latest sensor data
+const getAllSensorStatus = async (req, res) => {
   try {
-    const trucksStatus = await SensorData.aggregate([
-      {
-        $sort: { timestamp: -1 }
-      },
-      {
-        $group: {
-          _id: '$truckId',
-          latestData: { $first: '$$ROOT' }
-        }
-      },
-      {
-        $project: {
-          truckId: '$_id',
-          temperature: '$latestData.temperature',
-          humidity: '$latestData.humidity',
-          illuminance: '$latestData.illuminance',
-          timestamp: '$latestData.timestamp',
-          mlAnalysis: '$latestData.mlAnalysis',
-          location: '$latestData.location'
-        }
-      }
-    ]);
-
+    const sensorStatus = await SensorData.find().sort({ timestamp: -1 });
     res.json({
       success: true,
-      data: trucksStatus,
-      count: trucksStatus.length
+      data: sensorStatus,
+      count: sensorStatus.length
     });
-
   } catch (error) {
-    console.error('Error fetching trucks status:', error);
+    console.error('Error fetching sensor status:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch trucks status',
+      message: 'Failed to fetch sensor status',
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
@@ -164,6 +149,9 @@ const getUnsafeReadings = async (req, res) => {
 // [ML MODEL PART - To be done by your friend]
 // This function simulates the process of calling the ML model.
 // It receives the newly saved data and is responsible for getting the 'safe'/'unsafe' status.
+// =================== ML INTEGRATION POINT ===================
+// Your friend should connect the ML model here. Replace the mockMLResponse
+// with a real call to the ML model or service.
 const triggerMLAnalysis = async (sensorData, io) => {
   console.log(`[ML LOG] Starting analysis for data ID: ${sensorData._id}`);
 
@@ -219,8 +207,6 @@ const triggerMLAnalysis = async (sensorData, io) => {
         if (io) {
           console.log('[ML LOG] Emitting ML analysis result to frontend...');
           io.emit('mlResult', updatedData);
-          // Also emit to a specific truck's room if needed
-          io.to(`truck_${updatedData.truckId}`).emit('truckUpdate', updatedData);
         }
 
       } catch (error) {
@@ -248,8 +234,7 @@ const callMLModel = async (sensorData) => {
     const response = await axios.post(process.env.ML_MODEL_URL, {
       temperature: sensorData.temperature,
       humidity: sensorData.humidity,
-      illuminance: sensorData.illuminance,
-      truckId: sensorData.truckId
+      illuminance: sensorData.illuminance
     });
 
     console.log('[ML LOG] Received response from external model.');
@@ -268,7 +253,7 @@ const callMLModel = async (sensorData) => {
 module.exports = {
   storeSensorData,
   getLatestSensorData,
-  getAllTrucksStatus,
+  getAllSensorStatus,
   getUnsafeReadings
   // Note: triggerMLAnalysis and callMLModel are internal helper functions
   // and are not called directly by the router.

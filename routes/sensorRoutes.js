@@ -3,7 +3,7 @@ const router = express.Router();
 const { 
   storeSensorData, 
   getLatestSensorData, 
-  getAllTrucksStatus, 
+  getAllSensorStatus,
   getUnsafeReadings 
 } = require('../controllers/sensorController');
 const { validateSensorData, validateTruckId } = require('../middleware/validation');
@@ -13,15 +13,15 @@ const { validateSensorData, validateTruckId } = require('../middleware/validatio
 // @access  Public (in production, add authentication)
 router.post('/data', validateSensorData, storeSensorData);
 
-// @route   GET /api/sensors/truck/:truckId
-// @desc    Get latest sensor data for a specific truck
+// @route   GET /api/sensors/latest
+// @desc    Get latest sensor data
 // @access  Public
-router.get('/truck/:truckId', validateTruckId, getLatestSensorData);
+router.get('/latest', getLatestSensorData);
 
-// @route   GET /api/sensors/trucks/status
-// @desc    Get status of all trucks with their latest readings
+// @route   GET /api/sensors/status
+// @desc    Get latest status of all sensor data
 // @access  Public
-router.get('/trucks/status', getAllTrucksStatus);
+router.get('/status', getAllSensorStatus);
 
 // @route   GET /api/sensors/alerts
 // @desc    Get all unsafe readings (alerts)

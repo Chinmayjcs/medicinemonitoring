@@ -33,23 +33,6 @@ const sensorDataSchema = Joi.object({
       'any.required': 'Illuminance is required'
     }),
   
-  truckId: Joi.string()
-    .trim()
-    .min(1)
-    .max(50)
-    .required()
-    .messages({
-      'string.base': 'Truck ID must be a string',
-      'string.min': 'Truck ID cannot be empty',
-      'string.max': 'Truck ID must be less than 50 characters',
-      'any.required': 'Truck ID is required'
-    }),
-  
-  location: Joi.object({
-    latitude: Joi.number().min(-90).max(90),
-    longitude: Joi.number().min(-180).max(180)
-  }).optional(),
-  
   timestamp: Joi.date().optional()
 });
 
@@ -78,22 +61,7 @@ const validateSensorData = (req, res, next) => {
   next();
 };
 
-// Validation for truck ID parameter
-const validateTruckId = (req, res, next) => {
-  const { truckId } = req.params;
-  
-  if (!truckId || truckId.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Valid truck ID is required'
-    });
-  }
-  
-  next();
-};
-
 module.exports = {
   validateSensorData,
-  validateTruckId,
   sensorDataSchema
 };

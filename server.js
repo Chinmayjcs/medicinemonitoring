@@ -58,14 +58,17 @@ app.get('/', (req, res) => {
     database: 'MongoDB Atlas',
     endpoints: {
       'POST /api/sensors/data': 'Store sensor data',
-      'GET /api/sensors/truck/:truckId': 'Get truck sensor data',
-      'GET /api/sensors/trucks/status': 'Get all trucks status',
+      'GET /api/sensors/latest': 'Get latest sensor data',
+      'GET /api/sensors/status': 'Get all sensor data',
       'GET /api/sensors/alerts': 'Get unsafe readings',
       'GET /api/sensors/health': 'Health check'
     }
   });
 });
 
+// =================== FRONTEND INTEGRATION POINT ===================
+// Frontend should connect to these Socket.IO events for real-time data.
+// ================================================================
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
@@ -81,23 +84,9 @@ io.on('connection', (socket) => {
     try {
       const SensorData = require('./models/SensorData');
       
-      if (data.truckId) {
-        // Get latest data for specific truck
-        const latestData = await SensorData.getLatestForTruck(data.truckId);
-        socket.emit('latestData', latestData);
-      } else {
-        // Get latest data for all trucks
-        const allTrucksData = await SensorData.aggregate([
-          { $sort: { timestamp: -1 } },
-          {
-            $group: {
-              _id: '$truckId',
-              latestData: { $first: '$$ROOT' }
-            }
-          }
-        ]);
-        socket.emit('allTrucksData', allTrucksData);
-      }
+      // Get latest sensor data
+      const latestData = await SensorData.find().sort({ timestamp: -1 }).limit(10);
+      socket.emit('latestData', latestData);
     } catch (error) {
       console.error('Error fetching latest data:', error);
       socket.emit('error', { message: 'Failed to fetch latest data' });
@@ -116,17 +105,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle client joining truck-specific room
-  socket.on('joinTruckRoom', (truckId) => {
-    socket.join(`truck_${truckId}`);
-    console.log(`Client ${socket.id} joined room for truck ${truckId}`);
-  });
-
-  // Handle client leaving truck-specific room
-  socket.on('leaveTruckRoom', (truckId) => {
-    socket.leave(`truck_${truckId}`);
-    console.log(`Client ${socket.id} left room for truck ${truckId}`);
-  });
 
   // Handle disconnection
   socket.on('disconnect', () => {
