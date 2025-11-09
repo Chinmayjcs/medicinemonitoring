@@ -15,3 +15,14 @@ th { background: #f1f5f9; font-weight: 600; font-size: 13px; }
 tr:hover { background: #f8fafc; }
 td.num { font-variant-numeric: tabular-nums; }
 footer { max-width: 1000px; margin: 10px auto 30px; color: #64748b; font-size: 12px; text-align: right; }
+
+/* Stats box */
+.stats-box { margin: 16px 0 20px; padding: 16px; background: #0f172a; color: #fff; border-radius: 12px; }
+.stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: stretch; }
+.stat { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 16px; text-align: center; }
+.stat-label { font-size: 14px; color: #cbd5e1; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-value { font-size: 28px; font-weight: 800; color: #ffffff; }
+
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}

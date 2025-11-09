@@ -1,5 +1,6 @@
 const API_BASE = 'http://localhost:5000'; // change if backend runs elsewhere
 const LIMIT = 15;
+let latestItems = [];
 
 // Elements
 const statusEl = document.getElementById('status');
@@ -16,6 +17,12 @@ const mlStatusEl = document.getElementById('mlStatus');
 const predictionBox = document.getElementById('predictionBox');
 const predLabel = document.getElementById('predLabel');
 const predConf = document.getElementById('predConf');
+// Stats elements
+const statTotalDocs = document.getElementById('statTotalDocs');
+const statPrecision = document.getElementById('statPrecision');
+const statRecall = document.getElementById('statRecall');
+const statAccuracy = document.getElementById('statAccuracy');
+const statF1 = document.getElementById('statF1');
 
 async function fetchLatest() {
   setStatus('Loading...');
@@ -25,11 +32,16 @@ async function fetchLatest() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    renderRows(json.data || []);
-    setStatus(`Loaded ${json.count ?? (json.data?.length || 0)} rows`);
+    const items = json.data || [];
+    latestItems = items;
+    renderRows(items);
+    setStatus(`Loaded ${json.count ?? (items.length || 0)} rows`);
+    return items;
   } catch (err) {
     console.error('Fetch failed:', err);
     setStatus('Failed to load');
+    latestItems = [];
+    return [];
   }
 }
 
@@ -65,20 +77,65 @@ function renderRows(items) {
 
 function setStatus(msg) { statusEl.textContent = msg; }
 function setMlStatus(msg) { mlStatusEl.textContent = msg; }
+function setStat(el, value) { if (el) el.textContent = value; }
+
+async function fetchTotalDocs() {
+  try {
+    const res = await fetch(`${API_BASE}/api/debug/ml-training-dataset/check`);
+    const json = await res.json();
+    if (!res.ok || json.success === false) throw new Error(json.error || json.message || 'Failed');
+    setStat(statTotalDocs, json.count ?? '-');
+  } catch (e) {
+    setStat(statTotalDocs, '-');
+  }
+}
 
 async function trainModel() {
-  setMlStatus('Training...');
   try {
     const res = await fetch(`${API_BASE}/api/ml/train`, { method: 'POST' });
     const json = await res.json();
     if (!res.ok || json.success === false) throw new Error(json.error || json.message || 'Train failed');
-    setMlStatus(`Trained. Accuracy: ${json.accuracy !== undefined ? (json.accuracy * 100).toFixed(2) + '%' : 'N/A'} | Samples: ${json.samples ?? 'N/A'}`);
+    const accStr = json.accuracy !== undefined ? (json.accuracy * 100).toFixed(2) + '%' : 'N/A';
+    const f1Str = json.f1 !== undefined ? (json.f1 * 100).toFixed(2) + '%' : 'N/A';
+    const precisionStr = json.precision !== undefined ? (json.precision * 100).toFixed(2) + '%' : 'N/A';
+    const recallStr = json.recall !== undefined ? (json.recall * 100).toFixed(2) + '%' : 'N/A';
+    const samples = json.samples ?? 'N/A';
+    setMlStatus(`Trained. Accuracy: ${accStr} | F1: ${f1Str} | Precision: ${precisionStr} | Recall: ${recallStr} | Samples: ${samples}`);
+    // Update stats box
+    setStat(statPrecision, precisionStr);
+    setStat(statRecall, recallStr);
+    setStat(statAccuracy, accStr);
+    setStat(statF1, f1Str);
+    await autoPredictIfPossible();
   } catch (e) {
     console.error('Train failed:', e);
-    setMlStatus('Train failed');
   }
 }
 
+async function autoPredictIfPossible() {
+  try {
+    // Use the most recent reading (assume first item is the newest)
+    const latest = latestItems[0] || latestItems[latestItems.length - 1];
+    const payload = {
+      temperature: parseFloat(latest.temperature),
+      humidity: parseFloat(latest.humidity),
+      lux: parseFloat(latest.illuminance ?? latest.lux)
+    };
+    if (Object.values(payload).some(v => Number.isNaN(v))) return;
+    const res = await fetch(`${API_BASE}/api/ml/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!res.ok || json.success === false) throw new Error(json.error || json.message || 'Predict failed');
+    predLabel.textContent = json.status;
+    predConf.textContent = (json.confidence * 100).toFixed(2) + '%';
+    predictionBox.classList.remove('hidden');
+  } catch (e) {
+    console.error('Auto predict failed:', e);
+  }
+}
 async function predict() {
   setMlStatus('Predicting...');
   predictionBox.classList.add('hidden');
@@ -113,5 +170,10 @@ refreshBtn.addEventListener('click', fetchLatest);
 if (trainBtn) trainBtn.addEventListener('click', trainModel);
 if (predictBtn) predictBtn.addEventListener('click', predict);
 
-// Initial load
-fetchLatest();
+// Initial load: load data, train model, then predict using most recent row
+;(async function init() {
+  await fetchTotalDocs();
+  await fetchLatest();
+  await trainModel();
+  await autoPredictIfPossible();
+})();

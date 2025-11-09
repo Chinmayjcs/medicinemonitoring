@@ -7,6 +7,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 const mongoose = require('mongoose');
 const axios = require('axios');
+const { startMlService, stopMlService } = require('./ml-service-runner');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -88,10 +89,26 @@ app.use((req, res, next) => {
 app.use('/api/sensors', sensorRoutes);
 
 // =================== ML PROXY ROUTES ===================
+// Normalize ML service base URL to avoid accidental extra path segments
+function getMlBase() {
+  const raw = process.env.ML_MODEL_URL || 'http://localhost:8000';
+  try {
+    const u = new URL(raw);
+    return u.origin; // strip any pathname like /predict
+  } catch (e) {
+    // allow values without scheme (e.g., localhost:8000)
+    try {
+      const u = new URL(`http://${raw}`);
+      return u.origin;
+    } catch {
+      return 'http://localhost:8000';
+    }
+  }
+}
 // Train the Random Forest model using data from MongoDB (ml-service consumes directly from DB)
 app.post('/api/ml/train', async (req, res) => {
   try {
-    const base = process.env.ML_MODEL_URL || 'http://localhost:8000';
+    const base = getMlBase();
     const { data } = await axios.post(`${base}/train`);
     return res.json({ success: true, ...data });
   } catch (err) {
@@ -110,7 +127,7 @@ app.post('/api/ml/predict', async (req, res) => {
       // Accept either lux or illuminance from clients, map to lux for ml-service
       lux: typeof lux !== 'undefined' ? lux : illuminance
     };
-    const base = process.env.ML_MODEL_URL || 'http://localhost:8000';
+    const base = getMlBase();
     const { data } = await axios.post(`${base}/predict`, payload);
     return res.json({ success: true, ...data });
   } catch (err) {
@@ -240,18 +257,34 @@ app.use('*', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}`);
   console.log(`⚡ WebSocket enabled for real-time communication`);
+  // Start ML service alongside the backend
+  try {
+    await startMlService();
+  } catch (e) {
+    console.warn('Failed to start ML service automatically:', e?.message || e);
+  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
+  stopMlService();
   server.close(() => {
     console.log('Process terminated');
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  stopMlService();
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
   });
 });
 
