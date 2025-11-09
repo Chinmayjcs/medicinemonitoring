@@ -1,7 +1,7 @@
 {
-  "name": "lakshmana-medicine-monitoring-backend",
+  "name": "medicine-monitoring-backend",
   "version": "1.0.0",
-  "description": "Final Year Project: Automated Medicine Quality Monitoring using ML and IoT by Lakshmana",
+  "description": "Final Year Project: Automated Medicine Quality Monitoring using ML and IoT by Team B6",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,7 +9,7 @@
     "test": "jest"
   },
   "keywords": ["iot", "medicine", "monitoring", "sensors", "ml", "mongodb", "final-year-project", "lakshmana"],
-  "author": "Lakshmana",
+  "author": "Team CCAD",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",

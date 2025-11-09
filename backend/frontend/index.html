@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Medicine Monitoring - Latest 15 Readings</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Medicine Monitoring</h1>
+    <p>Latest 15 readings (temperature, humidity, illuminance)</p>
+  </header>
+
+  <main>
+    <div class="controls">
+      <button id="refreshBtn">Refresh</button>
+      <span id="status" class="status">Idle</span>
+    </div>
+
+    <table id="dataTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Timestamp</th>
+          <th>Temperature (°C)</th>
+          <th>Humidity (%)</th>
+          <th>Illuminance (lux)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <footer>
+    <small>Powered by Team CCAD</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

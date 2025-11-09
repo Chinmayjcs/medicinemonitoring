@@ -5,6 +5,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
+const mongoose = require('mongoose');
+const axios = require('axios');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -22,6 +24,44 @@ const io = socketIo(server, {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST"],
     credentials: true
+  }
+});
+
+// List top N documents from ml-training-dataset (default 10)
+// GET /api/debug/ml-training-dataset/top?limit=10
+app.get('/api/debug/ml-training-dataset/top', async (req, res) => {
+  try {
+    const state = mongoose.connection.readyState; // 1 = connected
+    if (state !== 1) {
+      return res.status(500).json({
+        success: false,
+        message: 'Mongoose is not connected to MongoDB',
+        readyState: state
+      });
+    }
+
+    const limit = Math.max(1, Math.min(parseInt(req.query.limit, 10) || 10, 100));
+    const collection = mongoose.connection.db.collection('ml-training-dataset');
+    // Sort by newest first using _id (ObjectId timestamp) if no explicit timestamp exists
+    const docs = await collection
+      .find({}, { projection: { /* include all fields */ } })
+      .sort({ _id: -1 })
+      .limit(limit)
+      .toArray();
+
+    return res.json({
+      success: true,
+      count: docs.length,
+      limit,
+      data: docs
+    });
+  } catch (err) {
+    console.error('Fetching top documents failed:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch documents from ml-training-dataset',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal error'
+    });
   }
 });
 
@@ -47,12 +87,80 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/sensors', sensorRoutes);
 
+// =================== ML PROXY ROUTES ===================
+// Train the Random Forest model using data from MongoDB (ml-service consumes directly from DB)
+app.post('/api/ml/train', async (req, res) => {
+  try {
+    const base = process.env.ML_MODEL_URL || 'http://localhost:8000';
+    const { data } = await axios.post(`${base}/train`);
+    return res.json({ success: true, ...data });
+  } catch (err) {
+    console.error('ML train proxy error:', err.message);
+    return res.status(500).json({ success: false, message: 'ML train failed', error: err.response?.data || err.message });
+  }
+});
+
+// Predict SAFE/UNSAFE with confidence using temperature, humidity, lux
+app.post('/api/ml/predict', async (req, res) => {
+  try {
+    const { temperature, humidity, lux, illuminance } = req.body || {};
+    const payload = {
+      temperature,
+      humidity,
+      // Accept either lux or illuminance from clients, map to lux for ml-service
+      lux: typeof lux !== 'undefined' ? lux : illuminance
+    };
+    const base = process.env.ML_MODEL_URL || 'http://localhost:8000';
+    const { data } = await axios.post(`${base}/predict`, payload);
+    return res.json({ success: true, ...data });
+  } catch (err) {
+    console.error('ML predict proxy error:', err.message);
+    return res.status(500).json({ success: false, message: 'ML predict failed', error: err.response?.data || err.message });
+  }
+});
+
+// Debug route to verify access to the historical ML training dataset collection
+// GET /api/debug/ml-training-dataset/check
+app.get('/api/debug/ml-training-dataset/check', async (req, res) => {
+  try {
+    const state = mongoose.connection.readyState; // 1 = connected
+    if (state !== 1) {
+      return res.status(500).json({
+        success: false,
+        message: 'Mongoose is not connected to MongoDB',
+        readyState: state
+      });
+    }
+
+    const dbName = mongoose.connection.name;
+    const collection = mongoose.connection.db.collection('ml-training-dataset');
+    const count = await collection.countDocuments();
+    const sample = await collection.find({}).limit(1).toArray();
+
+    return res.json({
+      success: true,
+      connected: true,
+      db: dbName,
+      collection: 'ml-training-dataset',
+      count,
+      sample: sample[0] || null
+    });
+  } catch (err) {
+    console.error('ML training dataset check failed:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to access ml-training-dataset collection',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal error'
+    });
+  }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Lakshmana\'s Medicine Quality Monitoring API',
+    message: 'Team CCAD s\'Medicine Quality Monitoring API',
     project: 'Final Year Project - Automated Medicine Quality Monitoring using ML and IoT',
-    author: 'Lakshmana',
+    author: 'Team CCAD',
     version: '1.0.0',
     status: 'running',
     database: 'MongoDB Atlas',
