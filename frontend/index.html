@@ -1,93 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Medicine Monitoring - Latest 15 Readings</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <header>
-    <h1>Medicine Monitoring</h1>
-    <p>Latest 15 readings (temperature, humidity, lux) + ML prediction</p>
-  </header>
-
-  <main>
-    <div class="controls">
-      <button id="refreshBtn">Refresh</button>
-      <span id="status" class="status">Idle</span>
-    </div>
-
-    <section id="mlSection" class="card">
-      <h2>ML: Random Forest Prediction</h2>
-      <div class="grid">
-        <label>
-          <span>Temperature (°C)</span>
-          <input type="number" step="0.01" id="inTemp" placeholder="e.g., 8.5" />
-        </label>
-        <label>
-          <span>Humidity (%)</span>
-          <input type="number" step="0.01" id="inHum" placeholder="e.g., 45.2" />
-        </label>
-        <label>
-          <span>Lux</span>
-          <input type="number" step="0.01" id="inLux" placeholder="e.g., 120" />
-        </label>
-      </div>
-      <div class="controls">
-        <button id="trainBtn">Train Model</button>
-        <button id="predictBtn">Predict</button>
-        <span id="mlStatus" class="status"></span>
-      </div>
-      <div id="predictionBox" class="prediction hidden">
-        <div><strong>Prediction:</strong> <span id="predLabel">-</span></div>
-        <div><strong>Confidence:</strong> <span id="predConf">-</span></div>
-      </div>
-    </section>
-
-    <section id="statsSection" class="stats-box">
-      <div class="stats-grid">
-        <div class="stat">
-          <div class="stat-label">Total Documents</div>
-          <div id="statTotalDocs" class="stat-value">-</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Precision</div>
-          <div id="statPrecision" class="stat-value">-</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Recall</div>
-          <div id="statRecall" class="stat-value">-</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Accuracy</div>
-          <div id="statAccuracy" class="stat-value">-</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">F1 Score</div>
-          <div id="statF1" class="stat-value">-</div>
-        </div>
-      </div>
-    </section>
-
-    <table id="dataTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Timestamp</th>
-          <th>Temperature (°C)</th>
-          <th>Humidity (%)</th>
-          <th>Lux</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </main>
-
-  <footer>
-    <small>Team CCAD</small>
-  </footer>
-
-  <script src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medicine Monitoring Dashboard</title>
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
