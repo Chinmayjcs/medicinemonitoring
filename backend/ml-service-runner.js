@@ -53,9 +53,10 @@ async function startMlService() {
 
   console.log(`[backend] Starting ML service at ${host}:${port} (cwd=${mlServiceCwd})`);
 
-  // Spawn uvicorn main:app --host 0.0.0.0 --port <port>
-  mlProc = spawn(process.platform === 'win32' ? 'uvicorn.exe' : 'uvicorn',
-    ['main:app', '--host', host, '--port', port],
+    // Prefer `python -m uvicorn` to avoid missing executable issues on Windows
+  const pythonCmd = process.env.PYTHON_EXE || (process.platform === 'win32' ? 'python' : 'python3');
+  mlProc = spawn(pythonCmd,
+    ['-m', 'uvicorn', 'main:app', '--host', host, '--port', port],
     {
       cwd: mlServiceCwd,
       env: process.env,

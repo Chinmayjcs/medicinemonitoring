@@ -12,6 +12,31 @@ A Node.js backend system for automated medicine quality monitoring using IoT sen
 - **Data Validation**: Comprehensive input validation using Joi
 - **Error Handling**: Robust error handling and logging
 
+## 🔌 Hardware Integration
+
+The backend now supports reading sensor values directly from an Arduino connected via USB serial. The Arduino should output **one line per reading** in either JSON format:
+
+```json
+{"temperature": 8.5, "humidity": 45.2, "illuminance": 120}
+```
+
+or CSV format:
+
+```
+8.5,45.2,120
+```
+
+Set the following env vars (or rely on defaults):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SERIAL_PORT` | `COM3` (Win) / `/dev/ttyUSB0` (Linux) | Serial port path |
+| `SERIAL_BAUDRATE` | `9600` | Baud rate |
+
+The listener forwards each line to `/api/sensors/data`, so the existing workflow (DB save → WebSocket broadcast → ML analysis) remains unchanged.
+
+---
+
 ## 📋 Prerequisites
 
 - Node.js (v14 or higher)

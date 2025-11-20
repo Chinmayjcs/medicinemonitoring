@@ -19,6 +19,8 @@
     "socket.io": "^4.7.2",
     "joi": "^17.9.2",
     "axios": "^1.5.0",
+    "serialport": "^11.0.0",
+    "@serialport/parser-readline": "^11.0.0",
     "helmet": "^7.0.0",
     "morgan": "^1.10.0"
   },

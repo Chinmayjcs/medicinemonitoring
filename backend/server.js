@@ -8,6 +8,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const axios = require('axios');
 const { startMlService, stopMlService } = require('./ml-service-runner');
+const { initSerialListener } = require('./serial-listener');
 
 // Import database connection
 const connectDB = require('./config/database');
@@ -262,6 +263,12 @@ server.listen(PORT, async () => {
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}`);
   console.log(`⚡ WebSocket enabled for real-time communication`);
+  // Start serial listener for Arduino data (non-blocking)
+  try {
+    initSerialListener({});
+  } catch (e) {
+    console.warn('[backend] Serial listener error:', e?.message || e);
+  }
   // Start ML service alongside the backend
   try {
     await startMlService();
