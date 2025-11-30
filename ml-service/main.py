@@ -14,7 +14,7 @@ MODEL_PATH = os.environ.get("MODEL_PATH", "model.joblib")
 # IMPORTANT: You can hardcode your MongoDB connection string here.
 # The service will first read the environment variable MONGODB_URI, and if it's not set,
 # it will use the hardcoded fallback below. Replace "YOUR_MONGODB_URI_HERE" with your actual URI.
-MONGODB_URI = os.environ.get("MONGODB_URI") or "mongodb+srv://coldchain:darshan@database.ito4mbf.mongodb.net/medicine_monitoring?retryWrites=true&w=majority"
+MONGODB_URI = os.environ.get("MONGODB_URI") or "Add your MongoDb string here"
 MONGODB_DB_NAME = os.environ.get("MONGODB_DB_NAME", "medicine_monitoring")
 TRAIN_COLLECTION = os.environ.get("TRAIN_COLLECTION", "ml-training-dataset")
 
